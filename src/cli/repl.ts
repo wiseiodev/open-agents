@@ -1,6 +1,7 @@
 import * as readline from "readline";
 import { deepAgent } from "../agent";
 import type { TodoItem, ScratchpadEntry } from "../agent";
+import { printStream } from "./utils/print-stream";
 
 export interface ReplOptions {
   workingDirectory?: string;
@@ -55,7 +56,7 @@ export async function startRepl(options: ReplOptions = {}): Promise<void> {
       }
 
       try {
-        const result = await deepAgent.generate({
+        const result = await deepAgent.stream({
           prompt: trimmed,
           options: {
             workingDirectory,
@@ -64,7 +65,7 @@ export async function startRepl(options: ReplOptions = {}): Promise<void> {
           },
         });
 
-        console.log(result.text);
+        await printStream(result);
         console.log("\n");
       } catch (error) {
         console.error(

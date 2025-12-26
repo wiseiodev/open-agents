@@ -2,6 +2,7 @@
 
 import { deepAgent } from "../agent";
 import type { TodoItem, ScratchpadEntry } from "../agent";
+import { printStream } from "./utils/print-stream";
 
 async function main() {
   const args = process.argv.slice(2);
@@ -39,7 +40,7 @@ async function main() {
   try {
     console.log("Running agent...\n");
 
-    const result = await deepAgent.generate({
+    const result = await deepAgent.stream({
       prompt,
       options: {
         workingDirectory,
@@ -48,7 +49,7 @@ async function main() {
       },
     });
 
-    console.log(result.text);
+    await printStream(result);
     console.log("\n\nDone.");
   } catch (error) {
     console.error("Error:", error instanceof Error ? error.message : error);
