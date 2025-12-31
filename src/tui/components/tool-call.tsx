@@ -1,7 +1,7 @@
 import React, { useState, useEffect, type ReactNode } from "react";
 import { Box, Text, useInput } from "ink";
 import { useChat } from "@ai-sdk/react";
-import { getToolName } from "ai";
+import { getToolName, isTextUIPart, isToolUIPart } from "ai";
 import { useChatContext } from "../chat-context.js";
 import type { TUIAgentUIToolPart } from "../types.js";
 
@@ -416,6 +416,54 @@ function createEditDiffLines(
   return { lines: result, additions, removals };
 }
 
+// Simplified tool call renderer for subagent tool parts
+// Uses a looser type since these come from a different agent's tool set
+function SubagentToolCall({
+  part,
+}: {
+  part: Parameters<typeof getToolName>[0];
+}) {
+  const toolName = getToolName(part);
+  const isRunning = part.state === "input-streaming" || part.state === "input-available";
+  const hasError = part.state === "output-error";
+
+  // Extract a summary based on common tool input patterns
+  const input = part.input as Record<string, unknown> | undefined;
+  let summary = "";
+  if (input?.filePath) {
+    summary = String(input.filePath);
+  } else if (input?.pattern) {
+    summary = `"${input.pattern}"`;
+  } else if (input?.command) {
+    summary = String(input.command);
+  } else if (input) {
+    summary = JSON.stringify(input).slice(0, 40);
+  }
+
+  const dotColor = isRunning ? "yellow" : hasError ? "red" : "green";
+  const displayName = toolName.charAt(0).toUpperCase() + toolName.slice(1);
+
+  return (
+    <Box paddingLeft={1}>
+      <Text color="gray">│ </Text>
+      <Box>
+        {isRunning ? <ToolSpinner /> : <Text color={dotColor}>● </Text>}
+        <Text bold color={isRunning ? "yellow" : "white"}>
+          {displayName}
+        </Text>
+        {summary && (
+          <>
+            <Text color="gray">(</Text>
+            <Text color="cyan">{summary}</Text>
+            <Text color="gray">)</Text>
+          </>
+        )}
+        {hasError && <Text color="red"> - error</Text>}
+      </Box>
+    </Box>
+  );
+}
+
 export function ToolCall({
   part,
   activeApprovalId,
@@ -551,14 +599,13 @@ export function ToolCall({
     }
 
     case "tool-bash": {
-      const cmd = String(part.input?.command ?? "").slice(0, 50);
-      const summary = cmd + (cmd.length >= 50 ? "..." : "");
+      const command = String(part.input?.command ?? "");
       const exitCode =
         part.state === "output-available" ? part.output?.exitCode : undefined;
       return (
         <ToolLayout
           name="Bash"
-          summary={summary || "..."}
+          summary={command || "..."}
           output={
             exitCode !== undefined && (
               <Text color="white">
@@ -595,18 +642,89 @@ export function ToolCall({
 
     case "tool-task": {
       const desc = part.input?.task ?? "Spawning subagent";
+
+      // The output is a UIMessage with parts (text, tool-invocation, etc.)
+      // Preliminary results have preliminary: true, final result has preliminary: false/undefined
+      const hasOutput = part.state === "output-available";
+      const isPreliminary = hasOutput && part.preliminary === true;
+      const message = hasOutput ? part.output : undefined;
+
+      // Get all parts in order, filter to text and tool parts
+      const messageParts = message?.parts ?? [];
+      const relevantParts = messageParts.filter(
+        (p) => isToolUIPart(p) || isTextUIPart(p)
+      );
+      const toolParts = messageParts.filter(isToolUIPart);
+
+      // Show only the last few parts to avoid too much output
+      const maxVisible = 4;
+      const hiddenCount = Math.max(0, relevantParts.length - maxVisible);
+      const visibleParts = relevantParts.slice(-maxVisible);
+
+      const isComplete = hasOutput && !isPreliminary;
+      const isStreaming = hasOutput && isPreliminary;
+
+      const dotColor = isStreaming ? "yellow" : isComplete ? "green" : "yellow";
+
       return (
-        <ToolLayout
-          name="Task"
-          summary={desc}
-          output={
-            part.state === "output-available" && (
-              <Text color="white">Complete</Text>
-            )
-          }
-          error={error}
-          running={running}
-        />
+        <Box flexDirection="column" marginTop={1} marginBottom={1}>
+          {/* Header */}
+          <Box>
+            {running || isStreaming ? <ToolSpinner /> : <Text color={dotColor}>● </Text>}
+            <Text bold color={running || isStreaming ? "yellow" : "white"}>
+              Task
+            </Text>
+            <Text color="gray">(</Text>
+            <Text color="cyan">{desc}</Text>
+            <Text color="gray">)</Text>
+          </Box>
+
+          {/* Nested parts from subagent (text and tools in order) */}
+          {hasOutput && visibleParts.length > 0 && (
+            <Box flexDirection="column" paddingLeft={2} marginTop={1}>
+              {hiddenCount > 0 && (
+                <Box marginBottom={1}>
+                  <Text color="gray">
+                    ... {hiddenCount} more above
+                  </Text>
+                </Box>
+              )}
+              {visibleParts.map((p, i) => {
+                if (isToolUIPart(p)) {
+                  return <SubagentToolCall key={p.toolCallId} part={p} />;
+                }
+                if (isTextUIPart(p)) {
+                  // Show truncated text, dimmed
+                  const text = p.text.trim();
+                  if (!text) return null;
+                  const truncated = text.length > 80 ? text.slice(0, 80) + "..." : text;
+                  return (
+                    <Box key={`text-${i}`} paddingLeft={1}>
+                      <Text color="gray">│ </Text>
+                      <Text color="gray" dimColor>{truncated}</Text>
+                    </Box>
+                  );
+                }
+                return null;
+              })}
+            </Box>
+          )}
+
+          {/* Completion status */}
+          {isComplete && (
+            <Box paddingLeft={2}>
+              <Text color="gray">└ </Text>
+              <Text color="white">Complete ({toolParts.length} tool calls)</Text>
+            </Box>
+          )}
+
+          {error && (
+            <Box paddingLeft={2}>
+              <Text color="gray">└ </Text>
+              <Text color="red">Error: {error.slice(0, 80)}</Text>
+            </Box>
+          )}
+        </Box>
       );
     }
 

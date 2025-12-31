@@ -14,7 +14,7 @@ export function TextOutput({ text, reasoning, showReasoning = false }: TextOutpu
       {showReasoning && reasoning && (
         <Box marginBottom={1}>
           <Text color="blue" dimColor>
-            {reasoning}
+            {" "}{reasoning}
           </Text>
         </Box>
       )}
@@ -22,7 +22,7 @@ export function TextOutput({ text, reasoning, showReasoning = false }: TextOutpu
         <Box>
           <Text>
             <Text color="white">●</Text>
-            {renderMarkdown(text)}
+            {" "}{renderMarkdown(text)}
           </Text>
         </Box>
       )}

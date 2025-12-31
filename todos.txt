@@ -4,6 +4,8 @@
 - [x] update common types file to also have agent definition
 - [ ] cancel requests with esc
 - [ ] show stream of subagent
-- [ ] use prune messages!
+- [x] use prune messages!
 - [ ] add approved commands (auto approve for similar commands)
 - [ ] pull in and cache context window size with models.dev
+- [ ] move subagent definition into it's own file
+- [ ] use toModelOutput to return just the last message / text part from the task tool. (update the system prompt to say summarize your work.)

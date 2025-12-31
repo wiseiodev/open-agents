@@ -1,4 +1,5 @@
-import { tool, ToolLoopAgent, stepCountIs } from "ai";
+import { tool, ToolLoopAgent, stepCountIs, readUIMessageStream } from "ai";
+import type { UIMessage } from "ai";
 import { z } from "zod";
 import { readFileTool } from "../context/read";
 import { writeFileTool, editFileTool } from "../context/write";
@@ -62,33 +63,32 @@ EXAMPLES:
 - Goal and deliverables
 - Step-by-step procedure
 - Constraints and patterns to follow
-- How to verify the work`
+- How to verify the work`,
     ),
     workingDirectory: z
       .string()
       .optional()
       .describe("Working directory for the subagent"),
   }),
-  execute: async ({ task, instructions, workingDirectory }) => {
-    try {
-      const cwd = workingDirectory ?? process.cwd();
+  execute: async function* ({ task, instructions, workingDirectory }) {
+    const cwd = workingDirectory ?? process.cwd();
 
-      const subagent = new ToolLoopAgent({
-        model: "anthropic/claude-sonnet-4-20250514",
-        instructions: SUBAGENT_SYSTEM_PROMPT,
-        tools: {
-          read: readFileTool,
-          write: writeFileTool,
-          edit: editFileTool,
-          grep: grepTool,
-          glob: globTool,
-          bash: bashTool,
-        },
-        stopWhen: stepCountIs(30),
-      });
+    const subagent = new ToolLoopAgent({
+      model: "anthropic/claude-sonnet-4-20250514",
+      instructions: SUBAGENT_SYSTEM_PROMPT,
+      tools: {
+        read: readFileTool,
+        write: writeFileTool,
+        edit: editFileTool,
+        grep: grepTool,
+        glob: globTool,
+        bash: bashTool,
+      },
+      stopWhen: stepCountIs(30),
+    });
 
-      const result = await subagent.generate({
-        prompt: `Working directory: ${cwd}
+    const result = await subagent.stream({
+      prompt: `Working directory: ${cwd}
 
 ## Task
 ${task}
@@ -97,21 +97,25 @@ ${task}
 ${instructions}
 
 Complete this task and provide a summary of what you accomplished.`,
-      });
+    });
 
-      return {
-        success: true,
-        task,
-        summary: result.text,
-        stepsUsed: result.steps.length,
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      return {
-        success: false,
-        task,
-        error: `Subagent failed: ${message}`,
-      };
+    for await (const message of readUIMessageStream({
+      stream: result.toUIMessageStream(),
+    })) {
+      yield message;
     }
+  },
+  toModelOutput: ({ output: message }) => {
+    if (!message) {
+      return { type: "text", value: "Task completed." };
+    }
+
+    const lastTextPart = message.parts.findLast((p) => p.type === "text");
+
+    if (!lastTextPart || lastTextPart.type !== "text") {
+      return { type: "text", value: "Task completed." };
+    }
+
+    return { type: "text", value: lastTextPart.text };
   },
 });
