@@ -1,9 +1,9 @@
 import { ToolLoopAgent, stepCountIs } from "ai";
 import { z } from "zod";
-import { readFileTool } from "../../context/read";
-import { grepTool } from "../../context/grep";
-import { globTool } from "../../context/glob";
-import { bashTool, commandNeedsApproval } from "../../context/bash";
+import { readFileTool } from "../../file-system/read";
+import { grepTool } from "../../file-system/grep";
+import { globTool } from "../../file-system/glob";
+import { bashTool, commandNeedsApproval } from "../../file-system/bash";
 
 const EXPLORER_SYSTEM_PROMPT = `You are an explorer agent - a fast, read-only subagent specialized for exploring codebases.
 
@@ -70,8 +70,8 @@ export const explorerSubagent = new ToolLoopAgent({
     glob: globTool,
     // Use smart approval: safe read-only commands run without approval,
     // dangerous commands are blocked (explorer is read-only anyway)
-    bash: bashTool({ 
-      needsApproval: ({ command }) => commandNeedsApproval(command) 
+    bash: bashTool({
+      needsApproval: ({ command }) => commandNeedsApproval(command)
     }),
   },
   stopWhen: stepCountIs(30),

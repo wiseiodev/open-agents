@@ -1,10 +1,10 @@
 import { ToolLoopAgent, stepCountIs } from "ai";
 import { z } from "zod";
-import { readFileTool } from "../../context/read";
-import { writeFileTool, editFileTool } from "../../context/write";
-import { grepTool } from "../../context/grep";
-import { globTool } from "../../context/glob";
-import { bashTool, commandNeedsApproval } from "../../context/bash";
+import { readFileTool } from "../../file-system/read";
+import { writeFileTool, editFileTool } from "../../file-system/write";
+import { grepTool } from "../../file-system/grep";
+import { globTool } from "../../file-system/glob";
+import { bashTool, commandNeedsApproval } from "../../file-system/bash";
 
 const EXECUTOR_SYSTEM_PROMPT = `You are an executor agent - a fire-and-forget subagent that completes specific, well-defined implementation tasks autonomously.
 
@@ -61,8 +61,8 @@ export const executorSubagent = new ToolLoopAgent({
     glob: globTool,
     // Use smart approval: safe read-only commands run without approval,
     // dangerous commands (rm, git push, etc.) still require approval
-    bash: bashTool({ 
-      needsApproval: ({ command }) => commandNeedsApproval(command) 
+    bash: bashTool({
+      needsApproval: ({ command }) => commandNeedsApproval(command)
     }),
   },
   stopWhen: stepCountIs(30),
