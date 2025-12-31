@@ -2,11 +2,13 @@
 - [x] move to use context (remove prop drilling)
  - [x] can store model id in context and then update with hooks?
 - [x] update common types file to also have agent definition
-- [ ] cancel requests with esc
-- [ ] show stream of subagent
+- [x] show stream of subagent
 - [x] use prune messages!
-- [ ] add approved commands (auto approve for similar commands)
+- [x] move subagent definition into it's own file
+- [x] use toModelOutput to return just the last message / text part from the task tool. (update the system prompt to say summarize your work.)
+- [x] update folders to be (fs, planning, memory, task)
 - [ ] pull in and cache context window size with models.dev
-- [ ] move subagent definition into it's own file
-- [ ] use toModelOutput to return just the last message / text part from the task tool. (update the system prompt to say summarize your work.)
-- [ ] update folders to be (fs, planning, memory, task)
+- [ ] implement checkpointing for auto compaction (docs/auto-compaction-checkpoint-idea.md)
+- [ ] implement reasoning support (ui and provider options)
+- [ ] add approved commands (auto approve for similar commands)
+- [ ] cancel requests with esc
