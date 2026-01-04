@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { Box, Text } from "ink";
 
 export type Suggestion = {
@@ -13,44 +13,100 @@ type SuggestionsProps = {
   visible: boolean;
 };
 
+function calculateWindow(
+  selectedIndex: number,
+  totalItems: number,
+  maxDisplay: number
+): { windowStart: number; windowEnd: number } {
+  if (totalItems <= maxDisplay) {
+    return { windowStart: 0, windowEnd: totalItems };
+  }
+
+  // Keep selection roughly centered in window
+  let windowStart = Math.max(0, selectedIndex - Math.floor(maxDisplay / 2));
+
+  // Don't let window extend past end
+  if (windowStart + maxDisplay > totalItems) {
+    windowStart = totalItems - maxDisplay;
+  }
+
+  windowStart = Math.max(0, windowStart);
+
+  return {
+    windowStart,
+    windowEnd: Math.min(windowStart + maxDisplay, totalItems),
+  };
+}
+
 export const Suggestions = memo(function Suggestions({
   suggestions,
   selectedIndex,
-  visible
+  visible,
 }: SuggestionsProps) {
   if (!visible || suggestions.length === 0) {
     return null;
   }
 
-  // Limit displayed suggestions
   const maxDisplay = 10;
-  const displayedSuggestions = suggestions.slice(0, maxDisplay);
+
+  // Calculate window based on selected index
+  const { windowStart, windowEnd } = useMemo(
+    () => calculateWindow(selectedIndex, suggestions.length, maxDisplay),
+    [selectedIndex, suggestions.length]
+  );
+
+  const displayedSuggestions = suggestions.slice(windowStart, windowEnd);
+  const hasItemsAbove = windowStart > 0;
+  const hasItemsBelow = windowEnd < suggestions.length;
+  const itemsAbove = windowStart;
+  const itemsBelow = suggestions.length - windowEnd;
 
   return (
     <Box
       flexDirection="column"
-      borderStyle="single"
-      borderColor="gray"
       paddingLeft={1}
       paddingRight={1}
       marginTop={0}
     >
-      {displayedSuggestions.map((suggestion, index) => {
-        const isSelected = index === selectedIndex;
+      {/* Scroll indicator: items above */}
+      {hasItemsAbove && (
+        <Text color="gray" dimColor>
+          ... {itemsAbove} above
+        </Text>
+      )}
+
+      {displayedSuggestions.map((suggestion, displayIndex) => {
+        // Map display index back to actual suggestion index
+        const actualIndex = windowStart + displayIndex;
+        const isSelected = actualIndex === selectedIndex;
+
         return (
           <Box key={suggestion.value}>
+            {/* Selection indicator */}
+            <Text color={isSelected ? "yellow" : "gray"}>
+              {isSelected ? "> " : "  "}
+            </Text>
+            {/* Suggestion text */}
             <Text
-              color={isSelected ? "black" : suggestion.isDirectory ? "cyan" : "white"}
-              backgroundColor={isSelected ? "white" : undefined}
+              color={
+                isSelected
+                  ? "yellow"
+                  : suggestion.isDirectory
+                    ? "cyan"
+                    : "white"
+              }
+              bold={isSelected}
             >
               {suggestion.display}
             </Text>
           </Box>
         );
       })}
-      {suggestions.length > maxDisplay && (
+
+      {/* Scroll indicator: items below */}
+      {hasItemsBelow && (
         <Text color="gray" dimColor>
-          ...and {suggestions.length - maxDisplay} more
+          ... {itemsBelow} below
         </Text>
       )}
     </Box>

@@ -263,8 +263,25 @@ export const InputBox = memo(function InputBox({
   }, [suggestions, selectedIndex, mentionInfo, value, cursorPosition, updateValue]);
 
   const handleTab = useCallback(() => {
+    // If a directory is selected, "enter" it instead of selecting
+    if (suggestions.length > 0 && mentionInfo) {
+      const selected = suggestions[selectedIndex];
+      if (selected?.isDirectory) {
+        // Replace the partial path with the directory path (no trailing space)
+        const before = value.slice(0, mentionInfo.mentionStart + 1); // Include @
+        const after = value.slice(cursorPosition);
+        const newValue = before + selected.value + after;
+        updateValue(newValue);
+        // Update cursor position to end of directory path
+        const newCursorPos = mentionInfo.mentionStart + 1 + selected.value.length;
+        setCursorPosition(newCursorPos);
+        // Keep suggestions open - they will refresh via the useEffect
+        return true;
+      }
+    }
+    // For files, select normally
     return selectSuggestion();
-  }, [selectSuggestion]);
+  }, [suggestions, selectedIndex, mentionInfo, value, cursorPosition, updateValue, selectSuggestion]);
 
   const handleReturn = useCallback(() => {
     return selectSuggestion();
