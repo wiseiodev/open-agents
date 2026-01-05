@@ -330,7 +330,7 @@ function ToolLayout({
         <Text
           bold
           color={
-            denied ? "red" : running || approvalRequested ? "yellow" : "white"
+            denied ? "red" : "white"
           }
         >
           {name}
@@ -825,9 +825,7 @@ export function ToolCall({
               color={
                 denied
                   ? "red"
-                  : running || approvalRequested
-                    ? "yellow"
-                    : "white"
+                  : "white"
               }
             >
               Bash
@@ -1042,9 +1040,7 @@ export function ToolCall({
               color={
                 taskDenied
                   ? "red"
-                  : running || isStreaming || taskApprovalRequested
-                    ? "yellow"
-                    : "white"
+                  : "white"
               }
             >
               {subagentLabel}
