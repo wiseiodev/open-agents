@@ -276,12 +276,19 @@ const runAgentStep = async (
       throw new Error("Agent stream finished without a response message");
     }
 
-    const stepUsage = await result.totalUsage;
+    const [stepUsage, finishReason, rawFinishReason, response] =
+      await Promise.all([
+        result.totalUsage,
+        result.finishReason,
+        result.rawFinishReason,
+        result.response,
+      ]);
 
     return {
       responseMessage,
-      responseMessages: (await result.response).messages,
-      finishReason: await result.finishReason,
+      responseMessages: response.messages,
+      finishReason,
+      rawFinishReason,
       stepUsage,
       stepWasAborted: false,
     };
@@ -292,6 +299,7 @@ const runAgentStep = async (
         responseMessage: undefined,
         responseMessages: [],
         finishReason: abortedFinishReason,
+        rawFinishReason: undefined,
         stepUsage: undefined,
         stepWasAborted: true,
       };

@@ -18,6 +18,7 @@ const spies = {
 // Track what the agent stream yields
 let agentStreamParts: Array<Record<string, unknown>> = [];
 let agentFinishReason = "stop";
+let agentRawFinishReason: string | undefined = "provider_stop";
 let agentTotalUsage = { inputTokens: 10, outputTokens: 5, totalTokens: 15 };
 let agentResponseMessages: unknown[] = [];
 let streamOnFinishCallback:
@@ -111,6 +112,7 @@ mock.module("@/app/config", () => ({
         },
         totalUsage: Promise.resolve(agentTotalUsage),
         finishReason: Promise.resolve(agentFinishReason),
+        rawFinishReason: Promise.resolve(agentRawFinishReason),
         response: Promise.resolve({ messages: agentResponseMessages }),
       };
     },
@@ -157,6 +159,7 @@ beforeEach(() => {
   runStatus = "running";
   agentStreamParts = [{ type: "text-delta", textDelta: "Hi" }];
   agentFinishReason = "stop";
+  agentRawFinishReason = "provider_stop";
   agentTotalUsage = { inputTokens: 10, outputTokens: 5, totalTokens: 15 };
   agentResponseMessages = [];
   streamOnFinishCallback = undefined;
