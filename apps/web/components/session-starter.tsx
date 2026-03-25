@@ -1,6 +1,14 @@
 "use client";
 
-import { GitBranch, Plus, X } from "lucide-react";
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  GitBranch,
+  GitCommitHorizontal,
+  Loader2,
+  Plus,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSession } from "@/hooks/use-session";
@@ -60,6 +68,7 @@ export function SessionStarter({
   const defaultAutoCreatePr = preferences?.autoCreatePr ?? false;
   const [autoCommitPush, setAutoCommitPush] = useState<boolean | null>(null);
   const [autoCreatePr, setAutoCreatePr] = useState<boolean | null>(null);
+  const [gitSettingsExpanded, setGitSettingsExpanded] = useState(false);
   const sandboxType = preferences?.defaultSandboxType ?? DEFAULT_SANDBOX_TYPE;
   const sandboxName =
     SANDBOX_OPTIONS.find((s) => s.id === sandboxType)?.name ?? sandboxType;
@@ -278,46 +287,86 @@ export function SessionStarter({
           </p>
         )}
 
-        <div className="flex items-center justify-between gap-4 rounded-md border border-border/70 bg-muted/20 px-3 py-2 dark:border-white/10 dark:bg-white/[0.02]">
-          <div className="space-y-1">
-            <p className="text-sm font-medium">Auto commit and push</p>
-            <p className="text-xs text-muted-foreground">
-              Automatically commit and push after each agent turn.
-            </p>
-          </div>
-          <Switch
-            checked={effectiveAutoCommitPush}
-            onCheckedChange={setAutoCommitPush}
-            disabled={controlsDisabled}
-          />
-        </div>
+        {mode === "repo" && !gitSettingsExpanded && (
+          <button
+            type="button"
+            onClick={() => setGitSettingsExpanded(true)}
+            className="flex w-full items-center gap-2.5 rounded-lg border border-border/70 bg-muted/20 px-3.5 py-2.5 text-left transition-colors hover:bg-muted/40 dark:border-white/10 dark:bg-white/[0.02] dark:hover:bg-white/[0.04]"
+          >
+            <GitCommitHorizontal className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+            <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+              {effectiveAutoCommitPush ? (
+                <>
+                  Auto commit{" "}
+                  <span className="font-medium text-foreground/80">on</span>
+                  {effectiveAutoCreatePr && (
+                    <>
+                      {" · "}Auto PR{" "}
+                      <span className="font-medium text-foreground/80">on</span>
+                    </>
+                  )}
+                </>
+              ) : (
+                "Auto commit and push disabled"
+              )}
+            </span>
+            <ChevronDownIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
+          </button>
+        )}
 
-        <div className="flex items-center justify-between gap-4 rounded-md border border-border/70 bg-muted/20 px-3 py-2 dark:border-white/10 dark:bg-white/[0.02]">
-          <div className="space-y-1">
-            <p className="text-sm font-medium">Auto create pull request</p>
-            <p className="text-xs text-muted-foreground">
-              Automatically open a pull request after auto commit and push.
-            </p>
+        {mode === "repo" && gitSettingsExpanded && (
+          <div className="overflow-hidden rounded-lg border border-border/70 bg-muted/20 dark:border-white/10 dark:bg-white/[0.02]">
+            <button
+              type="button"
+              onClick={() => setGitSettingsExpanded(false)}
+              className="flex w-full items-center justify-between gap-4 px-3 py-2 text-left transition-colors hover:bg-muted/30"
+            >
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Auto commit and push</p>
+                <p className="text-xs text-muted-foreground">
+                  Automatically commit and push after each agent turn.
+                </p>
+              </div>
+              <ChevronUpIcon className="h-4 w-4 shrink-0 text-muted-foreground/50" />
+            </button>
+            <div className="border-t border-border/50 dark:border-white/[0.06]">
+              <div className="flex items-center justify-between gap-4 px-3 py-2">
+                <p className="text-sm font-medium">Commit and push</p>
+                <Switch
+                  checked={effectiveAutoCommitPush}
+                  onCheckedChange={setAutoCommitPush}
+                  disabled={controlsDisabled}
+                />
+              </div>
+              {effectiveAutoCommitPush && (
+                <div className="flex items-center justify-between gap-4 border-t border-border/30 px-3 py-2 pl-6 dark:border-white/[0.04]">
+                  <p className="text-sm text-muted-foreground">
+                    Create pull request
+                  </p>
+                  <Switch
+                    checked={effectiveAutoCreatePr}
+                    onCheckedChange={setAutoCreatePr}
+                    disabled={controlsDisabled}
+                  />
+                </div>
+              )}
+            </div>
           </div>
-          <Switch
-            checked={effectiveAutoCreatePr}
-            onCheckedChange={setAutoCreatePr}
-            disabled={controlsDisabled || !effectiveAutoCommitPush}
-          />
-        </div>
+        )}
 
         <button
           type="button"
           onClick={handleSubmit}
           disabled={isSubmitDisabled}
           className={cn(
-            "w-full rounded-md px-4 py-2 text-sm font-medium transition-colors",
+            "flex w-full items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors",
             isSubmitDisabled
               ? "cursor-not-allowed bg-muted text-muted-foreground"
               : "bg-foreground text-background hover:bg-foreground/90",
           )}
         >
-          {buttonLabel}
+          {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+          {isLoading ? "Creating session…" : buttonLabel}
         </button>
 
         <p className="text-center text-xs text-muted-foreground">
