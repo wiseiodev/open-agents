@@ -7,6 +7,7 @@ import {
   ExternalLink,
   FolderGit2,
   GitBranch,
+  GitCommit,
   GitPullRequest,
   Loader2,
   Square,
@@ -193,14 +194,12 @@ function DiffFileList({ files }: { files: DiffFile[] }) {
 
   if (filteredFiles.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center p-4">
-        <div className="flex w-full flex-col items-center gap-1.5 rounded-lg border border-dashed border-muted-foreground/25 py-8 text-center">
-          <p className="text-xs text-muted-foreground">
-            {diffScope === "uncommitted"
-              ? "No uncommitted changes"
-              : "No file changes yet"}
-          </p>
-        </div>
+      <div className="flex w-full flex-col items-center gap-1.5 rounded-lg border border-dashed border-muted-foreground/25 py-8 text-center">
+        <p className="text-xs text-muted-foreground">
+          {diffScope === "uncommitted"
+            ? "No uncommitted changes"
+            : "No file changes yet"}
+        </p>
       </div>
     );
   }
@@ -439,14 +438,14 @@ function InlineCommitPanel({
         value={commitTitle}
         onChange={(e) => setCommitTitle(e.target.value)}
         disabled={isCommitting || !hasPendingGitWork}
-        className="h-7 text-xs"
+        className="h-8 text-xs"
       />
       <Textarea
         placeholder="Description (optional)"
         value={commitBody}
         onChange={(e) => setCommitBody(e.target.value)}
         disabled={isCommitting || !hasPendingGitWork}
-        rows={2}
+        rows={3}
         className="resize-none text-xs field-sizing-fixed"
       />
       <Button
@@ -461,7 +460,10 @@ function InlineCommitPanel({
             Committing...
           </>
         ) : (
-          "Commit & Push"
+          <>
+            <GitCommit className="mr-1.5 h-3.5 w-3.5" />
+            Commit & Push
+          </>
         )}
       </Button>
       {commitError && (
@@ -729,7 +731,7 @@ function InlinePrCreatePanel({
         value={prTitle}
         onChange={(e) => setPrTitle(e.target.value)}
         disabled={isCreatingPr}
-        className="h-7 text-xs"
+        className="h-8 text-xs"
       />
       <Textarea
         placeholder="Description (optional)"
@@ -1307,7 +1309,7 @@ export function GitPanel(props: GitPanelProps) {
         {gitPanelTab === "diff" && (
           <div className="flex min-h-0 flex-1 flex-col">
             {/* Fixed commit area */}
-            <div className="shrink-0 p-2 pb-0">
+            <div className="shrink-0 p-3 pb-0">
               {hasRepo && (
                 <div className="mb-2">
                   <InlineCommitPanel
@@ -1394,16 +1396,18 @@ export function GitPanel(props: GitPanelProps) {
             </div>
 
             {/* Scrollable file list */}
-            <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
+            <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
               {diffFiles && diffFiles.length > 0 ? (
                 <DiffFileList files={diffFiles} />
               ) : (
-                <div className="flex flex-1 items-center justify-center p-4">
-                  <div className="flex w-full flex-col items-center gap-1.5 rounded-lg border border-dashed border-muted-foreground/25 py-8 text-center">
-                    <p className="text-xs text-muted-foreground">
-                      {hasDiff ? "Loading..." : "No file changes yet"}
-                    </p>
-                  </div>
+                <div className="flex w-full flex-col items-center gap-1.5 rounded-lg border border-dashed border-muted-foreground/25 py-8 text-center">
+                  <p className="text-xs text-muted-foreground">
+                    {!hasSandbox
+                      ? "Waiting for sandbox..."
+                      : hasDiff
+                        ? "Loading..."
+                        : "No file changes yet"}
+                  </p>
                 </div>
               )}
             </div>
