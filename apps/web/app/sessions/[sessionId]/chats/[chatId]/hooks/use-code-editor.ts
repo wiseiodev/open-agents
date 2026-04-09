@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   CodeEditorLaunchResponse,
@@ -59,6 +60,7 @@ export function useCodeEditor({
   sessionId: string;
   canRun: boolean;
 }): CodeEditorControls {
+  const router = useRouter();
   const [state, setState] = useState<CodeEditorState>({ status: "idle" });
 
   useEffect(() => {
@@ -112,8 +114,8 @@ export function useCodeEditor({
   }, [canRun, sessionId]);
 
   const openEditorPage = useCallback(() => {
-    window.open(`/codespace/${sessionId}`, "_blank", "noopener,noreferrer");
-  }, [sessionId]);
+    router.push(`/codespace/${sessionId}`);
+  }, [router, sessionId]);
 
   /**
    * Ensure code-server is running and return the launch response.

@@ -2804,69 +2804,78 @@ export function SessionChatContent({
                 {codeEditor.menuLabel}
               </TooltipContent>
             </Tooltip>
-            {devServer.state.status === "ready" ? (
-              <div className="flex items-center rounded-lg border border-border px-0.5 py-0.5">
+            {/* Dev server — fixed h-7 wrapper prevents layout shift */}
+            <div className="flex h-7 items-center">
+              {devServer.state.status === "ready" ? (
+                <div className="flex items-center rounded-md border border-border px-0.5">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 rounded-sm"
+                        onClick={() => void devServer.handlePrimaryAction()}
+                      >
+                        <Globe className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      Open dev server
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 rounded-sm"
+                        onClick={() => void devServer.handleStopAction()}
+                      >
+                        <Square className="h-2.5 w-2.5 fill-current" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      Stop dev server
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              ) : devServer.state.status === "starting" ||
+                devServer.state.status === "stopping" ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6"
+                      className="h-7 w-7"
+                      disabled
+                    >
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    {devServer.state.status === "starting"
+                      ? "Starting dev server..."
+                      : "Stopping dev server..."}
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
                       onClick={() => void devServer.handlePrimaryAction()}
                     >
-                      <Globe className="h-3.5 w-3.5" />
+                      <Play className="h-3.5 w-3.5 fill-current" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom">Open dev server</TooltipContent>
+                  <TooltipContent side="bottom">
+                    Start dev server
+                  </TooltipContent>
                 </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => void devServer.handleStopAction()}
-                    >
-                      <Square className="h-3 w-3 fill-current" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">Stop dev server</TooltipContent>
-                </Tooltip>
-              </div>
-            ) : devServer.state.status === "starting" ||
-              devServer.state.status === "stopping" ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    disabled
-                  >
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  {devServer.state.status === "starting"
-                    ? "Starting dev server..."
-                    : "Stopping dev server..."}
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => void devServer.handlePrimaryAction()}
-                  >
-                    <Play className="h-3.5 w-3.5 fill-current" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">Start dev server</TooltipContent>
-              </Tooltip>
-            )}
+              )}
+            </div>
           </>,
           headerActionsRef.current,
         )}
