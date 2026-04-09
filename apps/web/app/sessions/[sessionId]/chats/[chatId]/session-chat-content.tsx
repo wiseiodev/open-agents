@@ -118,7 +118,6 @@ import { useStreamRecovery } from "./hooks/use-stream-recovery";
 import { useAutoCommitStatus } from "./hooks/use-auto-commit-status";
 import { useCodeEditor } from "./hooks/use-code-editor";
 import { useDevServer } from "./hooks/use-dev-server";
-
 import { useGitPanel } from "./git-panel-context";
 import { GitPanel } from "./git-panel";
 import {
@@ -885,6 +884,7 @@ export function SessionChatContent({
     setShareRequested,
     setHasActionNeeded,
     setChangesCount,
+    setHasCommittedChanges,
     panelPortalRef,
     headerActionsRef,
   } = useGitPanel();
@@ -2622,6 +2622,13 @@ export function SessionChatContent({
   useEffect(() => {
     setChangesCount(totalChangesCount);
   }, [totalChangesCount, setChangesCount]);
+
+  // Sync the "committed changes" indicator (blue dot) — branch has diverged
+  // and there are no uncommitted changes left to deal with
+  const hasDiffData = Boolean(diff || session.cachedDiff);
+  useEffect(() => {
+    setHasCommittedChanges(hasRepo && hasDiffData && !hasUncommittedGitChanges);
+  }, [hasRepo, hasDiffData, hasUncommittedGitChanges, setHasCommittedChanges]);
   const hasOpenPr = hasExistingPr && session.prStatus === "open";
   const canCloseAndArchive = hasOpenPr && !isArchived;
   const handleCommitted = useCallback(async () => {
